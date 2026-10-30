@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} – MediCare Pro Pharmacy</title>
+  
+  <!-- Modern Typography: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+  <!-- Custom Healthcare Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <!-- Chart.js CDN for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<div class="app-container">
+  {% if user %}
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <div class="brand-icon">
+        <i class="fa-solid fa-mortar-pestle"></i>
+      </div>
+      <div class="brand-details">
+        <span class="brand-title">MediCare Pro</span>
+        <span class="brand-sub">Medical Store MS</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Core Operations</div>
+      
+      <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('billing.pos') }}" class="nav-item {% if 'billing.pos' in request.endpoint %}active{% endif %}" style="background-color: var(--teal-light); color: var(--teal-hover);">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-cash-register"></i>
+          <strong style="color: var(--teal-hover);">Point of Sale (POS)</strong>
+        </div>
+      </a>
+
+      <a href="{{ url_for('billing.history') }}" class="nav-item {% if 'billing.history' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Sales Invoices</span>
+        </div>
+      </a>
+
+      <div class="nav-section-title">Inventory & Stock</div>
+
+      <a href="{{ url_for('medicines.index') }}" class="nav-item {% if 'medicines' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-pills"></i>
+          <span>Medicine Catalog</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('expiry.index') }}" class="nav-item {% if 'expiry' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-calendar-xmark"></i>
+          <span>Expiry Tracking</span>
+        </div>
+        {% if nav_urgent_expiry_count > 0 %}
+        <span class="nav-badge urgent">{{ nav_urgent_expiry_count }}</span>
+        {% endif %}
+      </a>
+
+      <a href="{{ url_for('low_stock.index') }}" class="nav-item {% if 'low_stock' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Low Stock Alerts</span>
+        </div>
+        {% if nav_low_stock_count > 0 %}
+        <span class="nav-badge warning">{{ nav_low_stock_count }}</span>
+        {% endif %}
+      </a>
+
+      <div class="nav-section-title">Purchases & Directory</div>
+
+      <a href="{{ url_for('purchases.index') }}" class="nav-item {% if 'purchases' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-cart-flatbed"></i>
+          <span>Purchase Orders</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('suppliers.index') }}" class="nav-item {% if 'suppliers' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-truck-field"></i>
+          <span>Suppliers</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('customers.index') }}" class="nav-item {% if 'customers' in request.endpoint %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-hospital-user"></i>
+          <span>Customers CRM</span>
+        </div>
+      </a>
+
+      <div class="nav-section-title">Insights & Audits</div>
+
+      <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint == 'reports.index' %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Reports & Profit</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('reports.audit_logs') }}" class="nav-item {% if request.endpoint == 'reports.audit_logs' %}active{% endif %}">
+        <div class="nav-item-content">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>System Audit Logs</span>
+        </div>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-snippet">
+        <div class="user-avatar">
+          {{ user.name[:1] if user.name else 'U' }}
+        </div>
+        <div class="user-info">
+          <div class="user-name">{{ user.name }}</div>
+          <span class="user-role-badge">{{ user.role }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" title="Sign Out" style="color: var(--slate-400); font-size: 1.1rem; padding: 0.25rem;">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+  {% endif %}
+
+  <!-- Main View Area -->
+  <div class="app-main" {% if not user %}style="margin-left: 0;"{% endif %}>
+    {% if user %}
+    <!-- Topbar -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="page-breadcrumb">
+          <span>MediCare Pro</span>
+          <i class="fa-solid fa-chevron-right" style="font-size: 0.65rem;"></i>
+          <span class="current">{% block breadcrumb %}Dashboard{% endblock %}</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="system-date">
+          <i class="fa-regular fa-clock"></i>
+          <span>{{ today_date }}</span>
+        </div>
+
+        <a href="{{ url_for('billing.pos') }}" class="btn-pos-shortcut">
+          <i class="fa-solid fa-cash-register"></i>
+          <span>New Sale (POS)</span>
+        </a>
+
+        <div class="topbar-actions">
+          <a href="{{ url_for('expiry.index') }}" class="topbar-btn" title="Expiry Alerts">
+            <i class="fa-regular fa-bell"></i>
+            {% if nav_urgent_expiry_count > 0 %}
+            <span style="position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background: var(--rose); border-radius: 50%; border: 2px solid white;"></span>
+            {% endif %}
+          </a>
+
+          <a href="{{ url_for('auth.profile') }}" class="topbar-btn" title="My Profile">
+            <i class="fa-regular fa-user"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+    {% endif %}
+
+    <!-- Page Content Container -->
+    <main class="page-content">
+      <!-- Flash Messages / Toast Container -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              {% if category == 'success' %}
+              <i class="fa-solid fa-circle-check"></i>
+              {% elif category == 'danger' %}
+              <i class="fa-solid fa-circle-exclamation"></i>
+              {% elif category == 'warning' %}
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              {% else %}
+              <i class="fa-solid fa-circle-info"></i>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: inherit; opacity: 0.7;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Core Scripts -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

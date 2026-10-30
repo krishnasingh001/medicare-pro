@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Purchase Orders – MediCare Pro{% endblock %}
+{% block breadcrumb %}Purchase Orders{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>Inward Purchase Orders &amp; Procurement</h1>
+    <p class="page-subtitle">Track pharmaceutical shipments, supplier invoices, tax breakdowns, and stock replenishment</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('purchases.new') }}" class="btn btn-primary">
+      <i class="fa-solid fa-cart-plus"></i>
+      <span>New Purchase Order</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-body" style="padding: 1rem;">
+    <form method="GET" action="{{ url_for('purchases.index') }}" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 240px; position: relative;">
+        <input type="text" name="search" class="form-control" placeholder="Search PO invoice # or supplier..." value="{{ search }}" style="padding-left: 2.25rem;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+      </div>
+
+      <div style="flex: 1; min-width: 200px;">
+        <select name="supplier_id" class="form-select">
+          <option value="">All Suppliers</option>
+          {% for supp in suppliers %}
+          <option value="{{ supp.id }}" {% if selected_supplier == supp.id|string %}selected{% endif %}>{{ supp.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-secondary">Filter</button>
+      {% if search or selected_supplier %}
+      <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Purchases Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Supplier Agency</th>
+          <th>Order Date</th>
+          <th style="text-align: center;">Item Count</th>
+          <th style="text-align: right;">Subtotal</th>
+          <th style="text-align: right;">Discount</th>
+          <th style="text-align: right;">GST / Tax</th>
+          <th style="text-align: right;">Grand Total</th>
+          <th>Created By</th>
+          <th style="text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if purchases %}
+          {% for p in purchases %}
+          <tr>
+            <td>
+              <a href="{{ url_for('purchases.invoice', id=p.id) }}" style="font-weight: 700; color: var(--primary);">
+                {{ p.invoice_number }}
+              </a>
+            </td>
+            <td>
+              <span style="font-weight: 600; color: var(--slate-900);">{{ p.supplier_name }}</span>
+            </td>
+            <td>{{ p.purchase_date }}</td>
+            <td style="text-align: center;">
+              <span class="badge badge-info">{{ p.item_count }} items</span>
+            </td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(p.subtotal) }}</td>
+            <td style="text-align: right; color: var(--emerald);">-₹{{ "%.2f"|format(p.discount) }}</td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(p.tax) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">
+              ₹{{ "%.2f"|format(p.grand_total) }}
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; color: var(--slate-600);">{{ p.created_by_name or 'System' }}</span>
+            </td>
+            <td style="text-align: center;">
+              <a href="{{ url_for('purchases.invoice', id=p.id) }}" class="btn btn-sm btn-secondary" title="View &amp; Print Purchase Invoice">
+                <i class="fa-solid fa-file-invoice"></i> View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" style="text-align: center; color: var(--slate-500); padding: 2.5rem;">
+              <i class="fa-solid fa-cart-flatbed" style="font-size: 2rem; color: var(--slate-300); display: block; margin-bottom: 0.75rem;"></i>
+              No purchase orders found matching your search.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

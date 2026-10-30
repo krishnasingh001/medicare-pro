@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Purchase Invoice {{ purchase.invoice_number }} – MediCare Pro{% endblock %}
+{% block breadcrumb %}Purchase Invoice{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div class="page-title-box">
+    <h1>Purchase Inward Invoice</h1>
+    <p class="page-subtitle">PO Ref: {{ purchase.invoice_number }} &bull; Supplier: {{ purchase.supplier_name }}</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">
+      <i class="fa-solid fa-print"></i> Print Invoice
+    </button>
+    <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Purchases
+    </a>
+  </div>
+</div>
+
+<div class="printable-document" style="max-width: 850px; margin: 0 auto; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow-sm);">
+  <!-- Invoice Header -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--border-color); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
+        <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+          <i class="fa-solid fa-mortar-pestle"></i>
+        </div>
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--slate-900); letter-spacing: -0.02em;">{{ config.PHARMACY_NAME }}</h2>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--slate-600); line-height: 1.5;">
+        {{ config.PHARMACY_ADDRESS }}<br>
+        Phone: {{ config.PHARMACY_PHONE }} &bull; GSTIN: {{ config.PHARMACY_GSTIN }}<br>
+        Drug License: {{ config.PHARMACY_DL }}
+      </div>
+    </div>
+
+    <div style="text-align: right;">
+      <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--teal); letter-spacing: 0.05em;">Goods Inward Note</span>
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--slate-900); margin: 0.2rem 0;">{{ purchase.invoice_number }}</h3>
+      <div style="font-size: 0.85rem; color: var(--slate-600);">Date: <strong>{{ purchase.purchase_date }}</strong></div>
+      <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.25rem;">Status: <span class="badge badge-success">Received &amp; Stocked</span></div>
+    </div>
+  </div>
+
+  <!-- Supplier Details Block -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.75rem; background: var(--slate-50); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+    <div>
+      <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500);">Supplier Agency / Vendor:</span>
+      <div style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-top: 0.2rem;">{{ purchase.supplier_name }}</div>
+      <div style="font-size: 0.85rem; color: var(--slate-600); margin-top: 0.25rem;">
+        Attn: {{ purchase.contact_person or 'Accounts Dept' }}<br>
+        Phone: {{ purchase.supplier_phone or 'N/A' }}<br>
+        Email: {{ purchase.supplier_email or 'N/A' }}
+      </div>
+    </div>
+
+    <div>
+      <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500);">Tax Identification &amp; Address:</span>
+      <div style="font-size: 0.85rem; color: var(--slate-700); margin-top: 0.25rem;">
+        <strong>GSTIN:</strong> {{ purchase.supplier_gstin or 'Unregistered' }}<br>
+        <strong>Address:</strong> {{ purchase.supplier_address or 'Standard distribution warehouse' }}<br>
+        <strong>Received By:</strong> {{ purchase.author_name or 'Store Manager' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Itemized Breakdown Table -->
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1.5rem;">
+    <thead>
+      <tr style="border-bottom: 2px solid var(--slate-200); background: var(--slate-100);">
+        <th style="padding: 0.65rem 0.75rem; text-align: left;">#</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: left;">Medicine Description</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: left;">Batch #</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: left;">Expiry</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: center;">Qty</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: right;">Unit Cost</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: right;">Sell Price</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: right;">Discount</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: right;">Tax %</th>
+        <th style="padding: 0.65rem 0.75rem; text-align: right;">Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-bottom: 1px solid var(--slate-200);">
+        <td style="padding: 0.65rem 0.75rem;">{{ loop.index }}</td>
+        <td style="padding: 0.65rem 0.75rem;">
+          <div style="font-weight: 600; color: var(--slate-900);">{{ item.medicine_name }}</div>
+          <div style="font-size: 0.75rem; color: var(--slate-500);">{{ item.medicine_code }} &bull; Rack: {{ item.rack_location or 'N/A' }}</div>
+        </td>
+        <td style="padding: 0.65rem 0.75rem; font-weight: 600;">{{ item.batch_number }}</td>
+        <td style="padding: 0.65rem 0.75rem;">{{ item.expiry_date }}</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: center; font-weight: 600;">{{ item.quantity }}</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: right;">₹{{ "%.2f"|format(item.purchase_price) }}</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: right; color: var(--primary);">₹{{ "%.2f"|format(item.selling_price) }}</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: right; color: var(--emerald);">-₹{{ "%.2f"|format(item.discount) }}</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: right;">{{ item.tax_percent }}%</td>
+        <td style="padding: 0.65rem 0.75rem; text-align: right; font-weight: 700; color: var(--slate-900);">
+          ₹{{ "%.2f"|format(item.line_total) }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Calculation Summary & Signature Block -->
+  <div style="display: grid; grid-template-columns: 1fr 300px; gap: 2rem;">
+    <div>
+      {% if purchase.notes %}
+      <div style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 1.5rem;">
+        <strong>Notes:</strong> {{ purchase.notes }}
+      </div>
+      {% endif %}
+
+      <div style="margin-top: 2rem; display: flex; gap: 2.5rem;">
+        <div style="border-top: 1px solid var(--slate-400); width: 160px; text-align: center; font-size: 0.75rem; color: var(--slate-600); padding-top: 0.35rem;">
+          Received &amp; Verified By
+        </div>
+        <div style="border-top: 1px solid var(--slate-400); width: 160px; text-align: center; font-size: 0.75rem; color: var(--slate-600); padding-top: 0.35rem;">
+          Store In-Charge Signature
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.85rem; color: var(--slate-600);">
+        <span>Subtotal:</span>
+        <span>₹{{ "%.2f"|format(purchase.subtotal) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.85rem; color: var(--emerald);">
+        <span>Discount:</span>
+        <span>-₹{{ "%.2f"|format(purchase.discount) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.85rem; color: var(--slate-600);">
+        <span>GST / Tax Total:</span>
+        <span>₹{{ "%.2f"|format(purchase.tax) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.65rem 0; border-top: 2px solid var(--slate-300); font-size: 1.25rem; font-weight: 700; color: var(--slate-900); margin-top: 0.5rem;">
+        <span>Grand Total:</span>
+        <span>₹{{ "%.2f"|format(purchase.grand_total) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

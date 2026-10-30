@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit {{ customer.name }}{% else %}Register Customer{% endif %} – MediCare Pro{% endblock %}
+{% block breadcrumb %}{% if is_edit %}Edit Customer{% else %}Register Customer{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>{% if is_edit %}Edit Customer Record{% else %}Register New Customer{% endif %}</h1>
+    <p class="page-subtitle">Save contact information and billing preferences for repeat store patients</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Customers
+    </a>
+  </div>
+</div>
+
+<div style="max-width: 600px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-hospital-user" style="color: var(--primary);"></i>
+        <span>Customer Information</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label" for="name">Customer Full Name *</label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Ramesh Kumar" value="{{ customer.name if is_edit else '' }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone / Mobile Number</label>
+          <input type="tel" id="phone" name="phone" class="form-control" placeholder="e.g. +91 98700 12345" value="{{ customer.phone if is_edit else '' }}">
+          <small style="font-size: 0.75rem; color: var(--slate-500);">Used for quick lookup at POS billing</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="e.g. ramesh.k@example.com" value="{{ customer.email if is_edit else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="address">Residential / Delivery Address</label>
+          <textarea id="address" name="address" class="form-control" rows="3" placeholder="Flat/House number, Apartment, Area, City">{{ customer.address if is_edit else '' }}</textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{% if is_edit %}Save Updates{% else %}Save Customer{% endif %}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}New Purchase Order – MediCare Pro{% endblock %}
+{% block breadcrumb %}New Purchase Order{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>Create Purchase Order (Inward Stock)</h1>
+    <p class="page-subtitle">Record supplier invoice details, add batch formulations, and atomically replenish inventory</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Orders
+    </a>
+  </div>
+</div>
+
+<form method="POST" id="purchaseForm">
+  <!-- Invoice Header Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-file-invoice" style="color: var(--primary);"></i>
+        <span>Supplier &amp; Order Details</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="supplier_id">Select Supplier / Distributor *</label>
+          <select id="supplier_id" name="supplier_id" class="form-select" required>
+            <option value="">-- Choose Supplier --</option>
+            {% for supp in suppliers %}
+            <option value="{{ supp.id }}">{{ supp.name }} (GSTIN: {{ supp.gstin or 'N/A' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="invoice_number">Supplier Invoice / PO #</label>
+          <input type="text" id="invoice_number" name="invoice_number" class="form-control" placeholder="Leave blank to auto-generate" style="text-transform: uppercase;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="purchase_date">Purchase Date *</label>
+          <input type="date" id="purchase_date" name="purchase_date" class="form-control" value="{{ today }}" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="notes">Internal Remarks / Shipment Notes</label>
+        <input type="text" id="notes" name="notes" class="form-control" placeholder="e.g. Inward batch stock replenishment via courier transit">
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Item Purchase Grid Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-pills" style="color: var(--teal);"></i>
+        <span>Purchase Items (Medicines, Batches &amp; Rates)</span>
+      </div>
+      <button type="button" class="btn btn-sm btn-teal" id="addRowBtn">
+        <i class="fa-solid fa-plus"></i> Add Item Row
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table" id="purchaseItemsTable">
+        <thead>
+          <tr>
+            <th style="min-width: 220px;">Medicine *</th>
+            <th style="min-width: 130px;">Batch # *</th>
+            <th style="min-width: 130px;">Expiry Date *</th>
+            <th style="width: 90px; text-align: center;">Qty *</th>
+            <th style="width: 100px; text-align: right;">Cost Price (₹) *</th>
+            <th style="width: 100px; text-align: right;">Sell Price (₹)</th>
+            <th style="width: 90px; text-align: right;">Disc (₹)</th>
+            <th style="width: 85px; text-align: center;">Tax</th>
+            <th style="width: 110px; text-align: right;">Line Total</th>
+            <th style="width: 50px; text-align: center;"></th>
+          </tr>
+        </thead>
+        <tbody id="purchaseItemsBody">
+          <!-- Dynamic item rows will be injected here -->
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer" style="display: flex; justify-content: flex-end; background: #ffffff;">
+      <div style="width: 320px;">
+        <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.9rem; color: var(--slate-600);">
+          <span>Gross Subtotal:</span>
+          <span id="poSubtotal" style="font-weight: 600;">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.9rem; color: var(--emerald);">
+          <span>Total Discount:</span>
+          <span id="poDiscount" style="font-weight: 600;">-₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.9rem; color: var(--slate-600);">
+          <span>GST / Tax Amount:</span>
+          <span id="poTax" style="font-weight: 600;">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-top: 2px solid var(--border-color); font-size: 1.25rem; font-weight: 700; color: var(--slate-900);">
+          <span>Grand Total:</span>
+          <span id="poGrandTotal" style="color: var(--primary);">₹0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-bottom: 2rem;">
+    <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary btn-lg" id="savePoBtn">
+      <i class="fa-solid fa-boxes-packing"></i>
+      <span>Save Purchase &amp; Update Inventory</span>
+    </button>
+  </div>
+</form>
+
+<!-- Medicine Data for JS Injection -->
+<script>
+const availableMedicines = [
+  {% for m in medicines %}
+  { id: {{ m.id }}, code: "{{ m.code }}", name: "{{ m.name | escape }}", rack: "{{ m.rack_location or '' }}" },
+  {% endfor %}
+];
+const prefillMedId = "{{ prefill_med_id }}";
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('purchaseItemsBody');
+  const addBtn = document.getElementById('addRowBtn');
+
+  function addRow(selectedMedId = '') {
+    const tr = document.createElement('tr');
+    tr.className = 'po-row';
+
+    let medOptions = '<option value="">-- Select Medicine --</option>';
+    availableMedicines.forEach(m => {
+      const isSelected = selectedMedId && String(m.id) === String(selectedMedId);
+      medOptions += `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${m.name} (${m.code})</option>`;
+    });
+
+    tr.innerHTML = `
+      <td>
+        <select name="medicine_id[]" class="form-select po-med" required>
+          ${medOptions}
+        </select>
+      </td>
+      <td>
+        <input type="text" name="batch_number[]" class="form-control" placeholder="e.g. B-012" required style="text-transform: uppercase;">
+      </td>
+      <td>
+        <input type="date" name="expiry_date[]" class="form-control" required>
+      </td>
+      <td>
+        <input type="number" name="quantity[]" class="form-control po-qty" min="1" value="50" required style="text-align: center;">
+      </td>
+      <td>
+        <input type="number" name="purchase_price[]" class="form-control po-price" step="0.01" min="0.01" value="25.00" required style="text-align: right;">
+      </td>
+      <td>
+        <input type="number" name="selling_price[]" class="form-control" step="0.01" min="0.01" value="35.00" style="text-align: right;">
+      </td>
+      <td>
+        <input type="number" name="discount[]" class="form-control po-disc" step="0.01" min="0" value="0.00" style="text-align: right;">
+      </td>
+      <td>
+        <select name="tax_percent[]" class="form-select po-tax" style="padding: 0.35rem 0.4rem; font-size: 0.8rem;">
+          <option value="0">0%</option>
+          <option value="5">5%</option>
+          <option value="12" selected>12%</option>
+          <option value="18">18%</option>
+        </select>
+      </td>
+      <td style="text-align: right; font-weight: 700; color: var(--slate-900);" class="po-line-total">
+        ₹0.00
+      </td>
+      <td style="text-align: center;">
+        <button type="button" class="btn btn-sm btn-danger remove-row-btn" title="Remove Item">✕</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    // Row change events
+    tr.querySelectorAll('input, select').forEach(input => {
+      input.addEventListener('input', calculateTotals);
+    });
+
+    tr.querySelector('.remove-row-btn').addEventListener('click', () => {
+      if (document.querySelectorAll('.po-row').length > 1) {
+        tr.remove();
+        calculateTotals();
+      } else {
+        alert("A purchase order must contain at least one item.");
+      }
+    });
+
+    calculateTotals();
+  }
+
+  function calculateTotals() {
+    let subtotal = 0.0;
+    let discount = 0.0;
+    let tax = 0.0;
+    let grand = 0.0;
+
+    document.querySelectorAll('.po-row').forEach(row => {
+      const qty = parseFloat(row.querySelector('.po-qty').value) || 0;
+      const rate = parseFloat(row.querySelector('.po-price').value) || 0;
+      const disc = parseFloat(row.querySelector('.po-disc').value) || 0;
+      const taxPct = parseFloat(row.querySelector('.po-tax').value) || 0;
+
+      const lineGross = qty * rate;
+      const taxable = Math.max(0, lineGross - disc);
+      const lineTax = taxable * (taxPct / 100);
+      const lineTotal = taxable + lineTax;
+
+      subtotal += lineGross;
+      discount += disc;
+      tax += lineTax;
+      grand += lineTotal;
+
+      row.querySelector('.po-line-total').textContent = `₹${lineTotal.toFixed(2)}`;
+    });
+
+    document.getElementById('poSubtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('poDiscount').textContent = `-₹${discount.toFixed(2)}`;
+    document.getElementById('poTax').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('poGrandTotal').textContent = `₹${grand.toFixed(2)}`;
+  }
+
+  addBtn.addEventListener('click', () => addRow());
+
+  // Initialize with at least 1 row
+  addRow(prefillMedId);
+});
+</script>
+{% endblock %}

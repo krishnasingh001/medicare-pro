@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Suppliers Directory – MediCare Pro{% endblock %}
+{% block breadcrumb %}Suppliers Directory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>Medicine Suppliers Directory</h1>
+    <p class="page-subtitle">Manage pharmaceutical distributors, trade contacts, GSTIN records, and purchase history</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('suppliers.add') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i>
+      <span>Add New Supplier</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-body" style="padding: 1rem;">
+    <form method="GET" action="{{ url_for('suppliers.index') }}" style="display: flex; gap: 0.75rem;">
+      <div style="flex: 1; position: relative;">
+        <input type="text" name="search" class="form-control" placeholder="Search supplier name, contact person, phone, or GSTIN..." value="{{ search }}" style="padding-left: 2.25rem;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+      </div>
+      <button type="submit" class="btn btn-secondary">Search</button>
+      {% if search %}
+      <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Suppliers Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Supplier Agency</th>
+          <th>Contact Person</th>
+          <th>Phone Number</th>
+          <th>Email Address</th>
+          <th>GSTIN</th>
+          <th style="text-align: center;">Total POs</th>
+          <th style="text-align: right;">Total Spend</th>
+          <th style="text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if suppliers %}
+          {% for s in suppliers %}
+          <tr>
+            <td>
+              <a href="{{ url_for('suppliers.view', id=s.id) }}" style="font-weight: 600; color: var(--slate-900); font-size: 0.95rem;">
+                {{ s.name }}
+              </a>
+              {% if s.address %}
+              <div style="font-size: 0.75rem; color: var(--slate-500); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <i class="fa-solid fa-location-dot" style="color: var(--teal);"></i> {{ s.address }}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-weight: 500;">{{ s.contact_person or 'N/A' }}</span>
+            </td>
+            <td>
+              <span style="font-weight: 600; color: var(--slate-800);">{{ s.phone or 'N/A' }}</span>
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; color: var(--slate-600);">{{ s.email or 'N/A' }}</span>
+            </td>
+            <td>
+              <span style="font-family: monospace; font-size: 0.8rem; background: var(--slate-100); padding: 0.2rem 0.45rem; border-radius: var(--radius-sm);">
+                {{ s.gstin or 'N/A' }}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-info">{{ s.total_purchases }} orders</span>
+            </td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">
+              ₹{{ "%.2f"|format(s.total_order_value) }}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <a href="{{ url_for('suppliers.view', id=s.id) }}" class="btn btn-sm btn-secondary" title="View Details">
+                  <i class="fa-regular fa-eye"></i>
+                </a>
+                <a href="{{ url_for('suppliers.edit', id=s.id) }}" class="btn btn-sm btn-secondary" title="Edit Supplier">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </a>
+                <a href="{{ url_for('purchases.new', supplier_id=s.id) }}" class="btn btn-sm btn-teal" title="Create Purchase Order">
+                  <i class="fa-solid fa-cart-plus"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--slate-500); padding: 2.5rem;">
+              No suppliers found matching your query.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit {{ supplier.name }}{% else %}Register Supplier{% endif %} – MediCare Pro{% endblock %}
+{% block breadcrumb %}{% if is_edit %}Edit Supplier{% else %}Register Supplier{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>{% if is_edit %}Edit Supplier Details{% else %}Register New Medicine Supplier{% endif %}</h1>
+    <p class="page-subtitle">Configure distributor information, tax IDs, and official communication channels</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Directory
+    </a>
+  </div>
+</div>
+
+<div style="max-width: 680px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-truck-field" style="color: var(--primary);"></i>
+        <span>Supplier Profile Details</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label" for="name">Supplier / Distributor Company Name *</label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Sun Pharma Distributors" value="{{ supplier.name if is_edit else '' }}" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="contact_person">Key Contact Person</label>
+            <input type="text" id="contact_person" name="contact_person" class="form-control" placeholder="e.g. Rajiv Menon" value="{{ supplier.contact_person if is_edit else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone Number</label>
+            <input type="text" id="phone" name="phone" class="form-control" placeholder="e.g. +91 98201 11223" value="{{ supplier.phone if is_edit else '' }}">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" placeholder="e.g. sales@sunpharma-dist.in" value="{{ supplier.email if is_edit else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="gstin">GSTIN (Goods &amp; Services Tax ID)</label>
+            <input type="text" id="gstin" name="gstin" class="form-control" placeholder="e.g. 27AABCS1429B1Z1" value="{{ supplier.gstin if is_edit else '' }}" style="text-transform: uppercase;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="address">Warehouse / Office Address</label>
+          <textarea id="address" name="address" class="form-control" rows="3" placeholder="Street address, City, State, PIN code">{{ supplier.address if is_edit else '' }}</textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{% if is_edit %}Save Updates{% else %}Register Supplier{% endif %}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

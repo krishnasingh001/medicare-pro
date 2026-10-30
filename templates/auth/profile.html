@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile – MediCare Pro{% endblock %}
+{% block breadcrumb %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>User Profile & Settings</h1>
+    <p class="page-subtitle">Manage your personal credentials and pharmacy terminal preferences</p>
+  </div>
+</div>
+
+<div style="max-width: 640px;">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-id-card" style="color: var(--primary);"></i>
+        <span>Account Information</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('auth.profile') }}">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" value="{{ user.username }}" disabled style="background: var(--slate-100); cursor: not-allowed;">
+          <small style="font-size: 0.75rem; color: var(--slate-500);">Usernames cannot be changed.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">System Role</label>
+          <input type="text" class="form-control" value="{{ user.role | capitalize }}" disabled style="background: var(--slate-100); cursor: not-allowed;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="full_name">Full Name *</label>
+          <input type="text" id="full_name" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-control" value="{{ user.email or '' }}">
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+        <h3 style="font-size: 1rem; font-weight: 600; color: var(--slate-900); margin-bottom: 0.5rem;">
+          Change Password (Optional)
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 1rem;">
+          Leave the password fields blank if you do not wish to change your current password.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="current_password">Current Password</label>
+          <input type="password" id="current_password" name="current_password" class="form-control" placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="new_password">New Password</label>
+          <input type="password" id="new_password" name="new_password" class="form-control" placeholder="At least 6 characters">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirm_password">Confirm New Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-type new password">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Save Profile Updates</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Tax Invoice {{ sale.invoice_number }} – MediCare Pro{% endblock %}
+{% block breadcrumb %}Sales Tax Invoice{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div class="page-title-box">
+    <h1>Sales Tax Invoice &amp; Receipt</h1>
+    <p class="page-subtitle">Invoice Ref: {{ sale.invoice_number }} &bull; Date: {{ sale.sale_date }}</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">
+      <i class="fa-solid fa-print"></i> Print Invoice (A4 / Thermal)
+    </button>
+    <a href="{{ url_for('billing.pos') }}" class="btn btn-teal">
+      <i class="fa-solid fa-cash-register"></i> New Counter Sale
+    </a>
+    <a href="{{ url_for('billing.history') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-receipt"></i> All Invoices
+    </a>
+  </div>
+</div>
+
+<div class="printable-document" style="max-width: 800px; margin: 0 auto; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow-sm);">
+  <!-- Pharmacy Header -->
+  <div style="text-align: center; border-bottom: 2px dashed var(--slate-300); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
+      <div style="width: 32px; height: 32px; background: var(--teal); color: white; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem;">
+        <i class="fa-solid fa-mortar-pestle"></i>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--slate-900); letter-spacing: -0.02em; margin: 0;">{{ config.PHARMACY_NAME }}</h2>
+    </div>
+    <div style="font-size: 0.85rem; color: var(--slate-600); margin-top: 0.25rem;">
+      {{ config.PHARMACY_TAGLINE }}
+    </div>
+    <div style="font-size: 0.8rem; color: var(--slate-500); line-height: 1.5; margin-top: 0.35rem;">
+      {{ config.PHARMACY_ADDRESS }}<br>
+      <strong>Tel:</strong> {{ config.PHARMACY_PHONE }} &bull; <strong>GSTIN:</strong> {{ config.PHARMACY_GSTIN }}<br>
+      <strong>Drug Lic. No:</strong> {{ config.PHARMACY_DL }}
+    </div>
+  </div>
+
+  <!-- Invoice Meta Details -->
+  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--slate-200); padding-bottom: 0.75rem;">
+    <div>
+      <div><strong>Invoice #:</strong> <span style="font-family: monospace; font-weight: 700;">{{ sale.invoice_number }}</span></div>
+      <div><strong>Date &amp; Time:</strong> {{ sale.sale_date }} {{ sale.created_at[11:16] if sale.created_at else '' }}</div>
+      <div><strong>Cashier:</strong> {{ sale.cashier_name or 'Pharmacy Terminal' }}</div>
+    </div>
+    <div style="text-align: right;">
+      <div><strong>Customer:</strong> {{ sale.customer_name or 'Walk-in Customer' }}</div>
+      {% if sale.customer_phone %}
+      <div><strong>Mobile:</strong> {{ sale.customer_phone }}</div>
+      {% endif %}
+      <div><strong>Payment Mode:</strong> <span class="badge badge-success">{{ sale.payment_method }}</span></div>
+    </div>
+  </div>
+
+  <!-- Itemized Medicines Table -->
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1.25rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--slate-800); border-top: 1px solid var(--slate-800);">
+        <th style="padding: 0.5rem 0.25rem; text-align: left;">#</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: left;">Medicine Description</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: left;">Batch</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: left;">Exp</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: center;">Qty</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: right;">Price</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: right;">Disc</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: right;">GST%</th>
+        <th style="padding: 0.5rem 0.25rem; text-align: right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-bottom: 1px dashed var(--slate-200);">
+        <td style="padding: 0.55rem 0.25rem;">{{ loop.index }}</td>
+        <td style="padding: 0.55rem 0.25rem;">
+          <div style="font-weight: 600; color: var(--slate-900);">{{ item.medicine_name }}</div>
+          <div style="font-size: 0.7rem; color: var(--slate-500);">{{ item.medicine_code }}</div>
+        </td>
+        <td style="padding: 0.55rem 0.25rem; font-weight: 600;">{{ item.batch_number }}</td>
+        <td style="padding: 0.55rem 0.25rem;">{{ item.expiry_date }}</td>
+        <td style="padding: 0.55rem 0.25rem; text-align: center; font-weight: 600;">{{ item.quantity }}</td>
+        <td style="padding: 0.55rem 0.25rem; text-align: right;">₹{{ "%.2f"|format(item.unit_price) }}</td>
+        <td style="padding: 0.55rem 0.25rem; text-align: right; color: var(--emerald);">-₹{{ "%.2f"|format(item.discount) }}</td>
+        <td style="padding: 0.55rem 0.25rem; text-align: right;">{{ item.tax_percent }}%</td>
+        <td style="padding: 0.55rem 0.25rem; text-align: right; font-weight: 700; color: var(--slate-900);">
+          ₹{{ "%.2f"|format(item.line_total) }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals Breakdown -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+    <div style="max-width: 380px; font-size: 0.75rem; color: var(--slate-500); line-height: 1.5;">
+      <strong>Terms &amp; Conditions:</strong><br>
+      1. Goods once sold will be replaced within 48 hours only with this original bill and intact blister packaging.<br>
+      2. Storage-sensitive and refrigerated items (e.g. insulins, vaccines) are non-returnable.<br>
+      3. Please consult your prescribing physician before consuming scheduled medications.
+    </div>
+
+    <div style="min-width: 260px; font-size: 0.85rem;">
+      <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--slate-600);">
+        <span>Gross Subtotal:</span>
+        <span>₹{{ "%.2f"|format(sale.subtotal) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--emerald);">
+        <span>Total Savings (Discount):</span>
+        <span>-₹{{ "%.2f"|format(sale.discount) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; color: var(--slate-600);">
+        <span>GST Collected:</span>
+        <span>₹{{ "%.2f"|format(sale.tax) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.6rem 0; border-top: 2px solid var(--slate-800); border-bottom: 2px solid var(--slate-800); font-size: 1.25rem; font-weight: 700; color: var(--slate-900); margin: 0.4rem 0;">
+        <span>Grand Total:</span>
+        <span>₹{{ "%.2f"|format(sale.grand_total) }}</span>
+      </div>
+
+      {% if sale.payment_method == 'Cash' %}
+      <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; font-size: 0.8rem; color: var(--slate-600);">
+        <span>Cash Tendered:</span>
+        <span>₹{{ "%.2f"|format(sale.amount_paid) }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; font-size: 0.8rem; font-weight: 700; color: var(--primary-dark);">
+        <span>Change Returned:</span>
+        <span>₹{{ "%.2f"|format(sale.change_due) }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Pharmacist Signatory -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 1.5rem; border-top: 1px dashed var(--slate-300);">
+    <div style="font-size: 0.75rem; color: var(--slate-500);">
+      Thank you for choosing {{ config.PHARMACY_NAME }}!<br>
+      Wishing you a speedy recovery &amp; good health.
+    </div>
+    <div style="text-align: center; border-top: 1px solid var(--slate-600); width: 180px; font-size: 0.75rem; color: var(--slate-700); padding-top: 0.25rem;">
+      Authorized Pharmacist
+    </div>
+  </div>
+</div>
+{% endblock %}

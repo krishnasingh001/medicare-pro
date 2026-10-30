@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Point of Sale (POS) – MediCare Pro{% endblock %}
+{% block breadcrumb %}Point of Sale (POS){% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1rem;">
+  <div class="page-title-box">
+    <h1>Point of Sale (POS) Counter Billing</h1>
+    <p class="page-subtitle">Real-time inventory deduction, batch validation, multiple payment methods, and instant receipts</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('billing.history') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-receipt"></i> Sales History
+    </a>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('billing.checkout') }}" id="posForm">
+  <input type="hidden" name="cart_data" id="hiddenCartData" value="[]">
+  <input type="hidden" name="customer_id" id="customerIdInput" value="">
+
+  <div class="pos-layout">
+    <!-- Left Main Billing Pane -->
+    <div class="pos-main">
+      
+      <!-- Instant Medicine Autocomplete Bar -->
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-body" style="padding: 1rem; position: relative;">
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="flex: 1; position: relative;">
+              <input type="text" id="posSearchInput" class="form-control" placeholder="Search medicine by brand name, generic salt, or barcode (Press '/' to focus)..." autocomplete="off" style="font-size: 1rem; padding: 0.75rem 1rem 0.75rem 2.5rem; border-color: var(--teal);">
+              <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--teal); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+
+          <!-- Autocomplete Dropdown Menu -->
+          <div id="posSearchResults" style="display: none; position: absolute; left: 1rem; right: 1rem; top: 100%; z-index: 200; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); margin-top: 0.35rem;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Cart Items Table -->
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-cart-shopping" style="color: var(--teal);"></i>
+            <span>Prescription &amp; Counter Cart</span>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--slate-500);">Batch stock validated in real-time</span>
+        </div>
+        <div class="table-responsive">
+          <table class="pos-cart-table">
+            <thead>
+              <tr>
+                <th style="text-align: left; min-width: 200px;">Medicine &amp; Batch</th>
+                <th style="text-align: center; width: 100px;">Quantity</th>
+                <th style="text-align: right; width: 100px;">Unit Price</th>
+                <th style="text-align: center; width: 80px;">Disc (₹)</th>
+                <th style="text-align: center; width: 85px;">GST</th>
+                <th style="text-align: right; width: 110px;">Line Total</th>
+                <th style="text-align: center; width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody id="posCartBody">
+              <tr id="emptyCartRow">
+                <td colspan="7" style="text-align: center; color: var(--slate-400); padding: 3rem 1rem;">
+                  <i class="fa-solid fa-cart-arrow-down" style="font-size: 2.5rem; color: var(--slate-300); margin-bottom: 0.75rem; display: block;"></i>
+                  <div style="font-weight: 600; color: var(--slate-600); font-size: 1rem;">Your Cart is Currently Empty</div>
+                  <div style="font-size: 0.85rem; color: var(--slate-400); margin-top: 0.25rem;">Type in the search bar above to add medicines to this billing session.</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar Checkout Pane -->
+    <div class="pos-sidebar">
+      
+      <!-- Customer Information Card -->
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-regular fa-user" style="color: var(--primary);"></i>
+            <span>Customer Details</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 1rem;">
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" for="customerPhoneInput">Customer Mobile (Optional)</label>
+            <div style="position: relative;">
+              <input type="tel" id="customerPhoneInput" name="customer_phone" class="form-control" placeholder="10-digit mobile number">
+              <i class="fa-solid fa-phone" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 0.8rem;"></i>
+            </div>
+            <small style="font-size: 0.7rem; color: var(--slate-500);">Auto-fetches existing customer name</small>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="customerNameInput">Customer Name</label>
+            <input type="text" id="customerNameInput" name="customer_name" class="form-control" placeholder="Walk-in Customer" value="Walk-in Customer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment & Financial Totals Card -->
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-receipt" style="color: var(--teal);"></i>
+            <span>Payment &amp; Tender</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 1.25rem;">
+          
+          <!-- Payment Mode Selection -->
+          <div class="form-group">
+            <label class="form-label">Payment Method</label>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+              <label style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                <input type="radio" name="payment_method" value="Cash" checked style="accent-color: var(--teal);">
+                <span><i class="fa-solid fa-money-bill-1-wave" style="color: var(--emerald);"></i> Cash</span>
+              </label>
+
+              <label style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                <input type="radio" name="payment_method" value="UPI" style="accent-color: var(--teal);">
+                <span><i class="fa-solid fa-qrcode" style="color: var(--primary);"></i> UPI / QR</span>
+              </label>
+
+              <label style="border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.5rem; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                <input type="radio" name="payment_method" value="Card" style="accent-color: var(--teal);">
+                <span><i class="fa-regular fa-credit-card" style="color: var(--amber);"></i> Card</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Financial Calculation Breakdown -->
+          <div class="pos-summary-box" style="background: var(--slate-50); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+            <div class="pos-summary-row">
+              <span>Gross Subtotal:</span>
+              <strong id="summarySubtotal">₹0.00</strong>
+            </div>
+            <div class="pos-summary-row" style="color: var(--emerald);">
+              <span>Total Discount:</span>
+              <strong id="summaryDiscount">-₹0.00</strong>
+            </div>
+            <div class="pos-summary-row">
+              <span>Estimated Tax (GST):</span>
+              <strong id="summaryTax">₹0.00</strong>
+            </div>
+            <div class="pos-grand-total">
+              <span>Grand Total:</span>
+              <span id="summaryGrandTotal" style="color: var(--primary); font-size: 1.4rem;">₹0.00</span>
+            </div>
+          </div>
+
+          <!-- Cash Tender & Change Due Section -->
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label" for="amountPaidInput">Cash Tendered (₹)</label>
+            <input type="number" id="amountPaidInput" name="amount_paid" class="form-control" step="0.5" min="0" placeholder="0.00" style="font-size: 1.1rem; font-weight: 700;">
+            
+            <div class="tender-buttons">
+              <button type="button" class="tender-btn" data-val="exact">Exact</button>
+              <button type="button" class="tender-btn" data-val="500">₹500</button>
+              <button type="button" class="tender-btn" data-val="1000">₹1000</button>
+              <button type="button" class="tender-btn" data-val="2000">₹2000</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.65rem; padding: 0.5rem 0.75rem; background: #e0f2fe; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; color: var(--primary-dark);">
+              <span>Change Return:</span>
+              <span id="summaryChangeDue" style="font-size: 1.05rem; font-weight: 700;">₹0.00</span>
+            </div>
+          </div>
+
+          <!-- Checkout Button -->
+          <button type="submit" class="btn btn-teal btn-lg" id="checkoutBtn" style="width: 100%; font-size: 1rem; padding: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <i class="fa-solid fa-print"></i>
+            <span>Complete Sale &amp; Print Bill</span>
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pos.js') }}"></script>
+{% endblock %}

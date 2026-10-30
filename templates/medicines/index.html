@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Medicine Inventory – MediCare Pro{% endblock %}
+{% block breadcrumb %}Medicine Inventory Catalog{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>Medicine Inventory Catalog</h1>
+    <p class="page-subtitle">Track formulations, batches, manufacturer details, and shelf locations</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('medicines.add') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i>
+      <span>Add New Medicine</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-body" style="padding: 1rem;">
+    <form method="GET" action="{{ url_for('medicines.index') }}" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 220px; position: relative;">
+        <input type="text" name="search" class="form-control" placeholder="Search by name, code, generic name, company..." value="{{ search }}" style="padding-left: 2.25rem;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+      </div>
+
+      <div style="flex: 1; min-width: 180px;">
+        <select name="category" class="form-select">
+          <option value="">All Therapeutic Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="flex: 1; min-width: 150px;">
+        <select name="stock_status" class="form-select">
+          <option value="">All Stock Levels</option>
+          <option value="adequate" {% if stock_status == 'adequate' %}selected{% endif %}>Sufficient Stock</option>
+          <option value="low" {% if stock_status == 'low' %}selected{% endif %}>Low Stock Level</option>
+          <option value="out" {% if stock_status == 'out' %}selected{% endif %}>Out of Stock</option>
+        </select>
+      </div>
+
+      <div style="flex: 1; min-width: 140px;">
+        <select name="sort_by" class="form-select">
+          <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Sort: Name</option>
+          <option value="code" {% if sort_by == 'code' %}selected{% endif %}>Sort: Code</option>
+          <option value="stock" {% if sort_by == 'stock' %}selected{% endif %}>Sort: Stock</option>
+          <option value="rack" {% if sort_by == 'rack' %}selected{% endif %}>Sort: Rack</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-secondary">
+        <i class="fa-solid fa-filter"></i> Apply
+      </button>
+
+      {% if search or selected_category or stock_status %}
+      <a href="{{ url_for('medicines.index') }}" class="btn btn-secondary" title="Clear Filters">
+        <i class="fa-solid fa-xmark"></i>
+      </a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Medicine Data Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Medicine Name &amp; Generic Formulation</th>
+          <th>Category</th>
+          <th>Manufacturer</th>
+          <th>Rack Location</th>
+          <th style="text-align: center;">Batches</th>
+          <th style="text-align: center;">Stock Status</th>
+          <th style="text-align: right;">Selling Price</th>
+          <th style="text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if medicines %}
+          {% for med in medicines %}
+          <tr>
+            <td>
+              <span style="font-weight: 700; color: var(--primary); font-size: 0.8rem; background: var(--primary-subtle); border: 1px solid var(--primary-light); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm);">
+                {{ med.code }}
+              </span>
+            </td>
+            <td>
+              <a href="{{ url_for('medicines.view', id=med.id) }}" style="font-weight: 600; color: var(--slate-900); font-size: 0.95rem;">
+                {{ med.name }}
+              </a>
+              {% if med.generic_name %}
+              <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.1rem;">
+                {{ med.generic_name }}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-neutral">{{ med.category }}</span>
+            </td>
+            <td>
+              <span style="font-size: 0.85rem; color: var(--slate-700);">{{ med.manufacturer or 'N/A' }}</span>
+            </td>
+            <td>
+              <span style="font-weight: 600; font-size: 0.8rem; color: var(--slate-700); background: var(--slate-100); padding: 0.2rem 0.45rem; border-radius: var(--radius-sm);">
+                {{ med.rack_location or 'N/A' }}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-info">{{ med.batch_count }} active</span>
+            </td>
+            <td style="text-align: center;">
+              {% if med.total_stock == 0 %}
+                <span class="badge badge-danger">Out of Stock</span>
+              {% elif med.total_stock <= med.min_stock %}
+                <span class="badge badge-warning">{{ med.total_stock }} (Low Stock)</span>
+              {% else %}
+                <span class="badge badge-success">{{ med.total_stock }} Units</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; font-weight: 600; color: var(--slate-900);">
+              {% if med.min_price and med.max_price %}
+                {% if med.min_price == med.max_price %}
+                  ₹{{ "%.2f"|format(med.min_price) }}
+                {% else %}
+                  ₹{{ "%.2f"|format(med.min_price) }} – ₹{{ "%.2f"|format(med.max_price) }}
+                {% endif %}
+              {% else %}
+                <span style="color: var(--slate-400); font-size: 0.8rem;">No price</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <a href="{{ url_for('medicines.view', id=med.id) }}" class="btn btn-sm btn-secondary" title="View Batches & Movements">
+                  <i class="fa-regular fa-eye"></i>
+                </a>
+                <a href="{{ url_for('medicines.edit', id=med.id) }}" class="btn btn-sm btn-secondary" title="Edit Medicine">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--slate-500); padding: 2.5rem;">
+              <i class="fa-solid fa-box-open" style="font-size: 2rem; color: var(--slate-300); display: block; margin-bottom: 0.75rem;"></i>
+              No medicines found matching the search criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if total_pages > 1 %}
+  <div class="card-footer" style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="font-size: 0.85rem; color: var(--slate-500);">
+      Showing page {{ page }} of {{ total_pages }} ({{ total_records }} total medicines)
+    </div>
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="{{ url_for('medicines.index', page=page-1, search=search, category=selected_category, stock_status=stock_status, sort_by=sort_by, order=order) }}" class="page-link">&laquo;</a>
+      {% endif %}
+
+      {% for p in range(1, total_pages + 1) %}
+      <a href="{{ url_for('medicines.index', page=p, search=search, category=selected_category, stock_status=stock_status, sort_by=sort_by, order=order) }}" class="page-link {% if p == page %}active{% endif %}">
+        {{ p }}
+      </a>
+      {% endfor %}
+
+      {% if page < total_pages %}
+      <a href="{{ url_for('medicines.index', page=page+1, search=search, category=selected_category, stock_status=stock_status, sort_by=sort_by, order=order) }}" class="page-link">&raquo;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

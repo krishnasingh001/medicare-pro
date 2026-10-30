@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}System Audit Logs – MediCare Pro{% endblock %}
+{% block breadcrumb %}System Security &amp; Audit Logs{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>System Audit Logs &amp; Activity Trail</h1>
+    <p class="page-subtitle">Security log of all user logins, billing events, inventory adjustments, and deletions</p>
+  </div>
+</div>
+
+<!-- Search & Module Filter -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-body" style="padding: 1rem;">
+    <form method="GET" action="{{ url_for('reports.audit_logs') }}" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="flex: 2; min-width: 240px; position: relative;">
+        <input type="text" name="search" class="form-control" placeholder="Search by username, action, details..." value="{{ search }}" style="padding-left: 2.25rem;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+      </div>
+
+      <div style="flex: 1; min-width: 180px;">
+        <select name="module" class="form-select">
+          <option value="">All Functional Modules</option>
+          {% for m in modules %}
+          <option value="{{ m.module }}" {% if selected_module == m.module %}selected{% endif %}>{{ m.module }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-secondary">Filter Logs</button>
+      {% if search or selected_module %}
+      <a href="{{ url_for('reports.audit_logs') }}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Log ID</th>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Module</th>
+          <th>Action</th>
+          <th>Event Details</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if logs %}
+          {% for l in logs %}
+          <tr>
+            <td><span style="font-family: monospace; color: var(--slate-500);">#{{ l.id }}</span></td>
+            <td style="font-size: 0.8rem; color: var(--slate-600); white-space: nowrap;">{{ l.created_at }}</td>
+            <td>
+              <span style="font-weight: 600; color: var(--slate-900);">
+                <i class="fa-solid fa-user-circle" style="color: var(--primary);"></i> {{ l.username or 'System' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-neutral">{{ l.module }}</span>
+            </td>
+            <td>
+              <span class="badge {% if 'DELETE' in l.action or 'FAIL' in l.action or 'WRITE_OFF' in l.action %}badge-danger{% elif 'SALE' in l.action or 'LOGIN' in l.action %}badge-success{% else %}badge-info{% endif %}">
+                {{ l.action }}
+              </span>
+            </td>
+            <td style="font-size: 0.85rem; color: var(--slate-700);">
+              {{ l.details or '-' }}
+            </td>
+            <td style="font-family: monospace; font-size: 0.8rem; color: var(--slate-500);">
+              {{ l.ip_address or '127.0.0.1' }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--slate-500); padding: 2.5rem;">
+              No audit log events found matching the criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

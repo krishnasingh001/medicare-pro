@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: medicare_pro_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=medicare-pro-production-secret-key-2026
+      - DATABASE_PATH=/app/data/medicare.db
+    volumes:
+      - medicare_data:/app/data
+
+volumes:
+  medicare_data:

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit {{ medicine.name }}{% else %}Add New Medicine{% endif %} – MediCare Pro{% endblock %}
+{% block breadcrumb %}{% if is_edit %}Edit Medicine{% else %}Add Medicine{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>{% if is_edit %}Edit Medicine Details{% else %}Register New Medicine{% endif %}</h1>
+    <p class="page-subtitle">Configure therapeutic information, reorder levels, and shelf location</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('medicines.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+    </a>
+  </div>
+</div>
+
+<div style="max-width: 860px;">
+  <form method="POST">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="fa-solid fa-prescription-bottle" style="color: var(--primary);"></i>
+          <span>Core Medicine Information</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="code">Medicine Code *</label>
+            <input type="text" id="code" name="code" class="form-control" placeholder="e.g. MED-001" value="{{ medicine.code if is_edit else '' }}" required style="font-weight: 600; text-transform: uppercase;">
+            <small style="font-size: 0.75rem; color: var(--slate-500);">Unique system barcode/code identifier</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="name">Brand / Trade Name *</label>
+            <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Dolo 650 Tablet" value="{{ medicine.name if is_edit else '' }}" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="generic_name">Generic / Salt Composition</label>
+            <input type="text" id="generic_name" name="generic_name" class="form-control" placeholder="e.g. Paracetamol 650mg" value="{{ medicine.generic_name if is_edit else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category">Therapeutic Category *</label>
+            <select id="category" name="category" class="form-select" required>
+              <option value="">Select Category</option>
+              {% for cat in categories %}
+              <option value="{{ cat }}" {% if is_edit and medicine.category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="manufacturer">Manufacturer / Company</label>
+            <input type="text" id="manufacturer" name="manufacturer" class="form-control" placeholder="e.g. Micro Labs Ltd" value="{{ medicine.manufacturer if is_edit else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="rack_location">Rack / Shelf Location</label>
+            <input type="text" id="rack_location" name="rack_location" class="form-control" placeholder="e.g. Rack A-01" value="{{ medicine.rack_location if is_edit else '' }}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="min_stock">Minimum Reorder Level *</label>
+            <input type="number" id="min_stock" name="min_stock" class="form-control" min="0" value="{{ medicine.min_stock if is_edit else '10' }}" required>
+            <small style="font-size: 0.75rem; color: var(--slate-500);">Triggers low-stock warning</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if not is_edit %}
+    <!-- Optional Initial Batch Card -->
+    <div class="card">
+      <div class="card-header" style="cursor: pointer;" onclick="document.getElementById('has_initial_batch').click()">
+        <div class="card-title">
+          <input type="checkbox" id="has_initial_batch" name="has_initial_batch" value="1" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;" onchange="toggleInitialBatch(this.checked)">
+          <label for="has_initial_batch" style="cursor: pointer; margin-left: 0.25rem;">Add Initial Opening Batch (Optional)</label>
+        </div>
+        <span style="font-size: 0.75rem; color: var(--slate-500);">Record existing opening stock now</span>
+      </div>
+
+      <div class="card-body" id="batchSection" style="display: none; background: var(--slate-50);">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="batch_number">Batch Number</label>
+            <input type="text" id="batch_number" name="batch_number" class="form-control" placeholder="e.g. DOL-2025-A1" style="text-transform: uppercase;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="mfg_date">Manufacturing Date</label>
+            <input type="date" id="mfg_date" name="mfg_date" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="expiry_date">Expiry Date</label>
+            <input type="date" id="expiry_date" name="expiry_date" class="form-control">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="quantity">Initial Quantity (Units)</label>
+            <input type="number" id="quantity" name="quantity" class="form-control" min="0" value="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="purchase_price">Purchase Cost (₹)</label>
+            <input type="number" id="purchase_price" name="purchase_price" class="form-control" step="0.01" min="0" value="0.00">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="selling_price">Selling Price (₹)</label>
+            <input type="number" id="selling_price" name="selling_price" class="form-control" step="0.01" min="0" value="0.00">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="supplier_id">Supplier</label>
+            <select id="supplier_id" name="supplier_id" class="form-select">
+              <option value="">Select Supplier</option>
+              {% for supp in suppliers %}
+              <option value="{{ supp.id }}">{{ supp.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <a href="{{ url_for('medicines.index') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>{% if is_edit %}Save Changes{% else %}Create Medicine Record{% endif %}</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleInitialBatch(show) {
+  const sec = document.getElementById('batchSection');
+  if (sec) sec.style.display = show ? 'block' : 'none';
+}
+</script>
+{% endblock %}

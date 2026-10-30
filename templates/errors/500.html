@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Internal Server Error (500) – MediCare Pro{% endblock %}
+{% block breadcrumb %}500 Error{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 4rem 1rem;">
+  <div style="font-size: 5rem; font-weight: 800; color: var(--rose); letter-spacing: -0.04em; line-height: 1;">500</div>
+  <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--slate-900); margin: 1rem 0 0.5rem 0;">Internal System Error</h2>
+  <p style="font-size: 0.95rem; color: var(--slate-500); max-width: 460px; margin: 0 auto 1.5rem auto;">
+    A database transaction or backend runtime error occurred. Changes have been safely rolled back to ensure database integrity.
+  </p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">
+    <i class="fa-solid fa-house"></i> Return to Safety
+  </a>
+</div>
+{% endblock %}

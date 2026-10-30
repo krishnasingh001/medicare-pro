@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports &amp; Financial Analytics – MediCare Pro{% endblock %}
+{% block breadcrumb %}Reports &amp; Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title-box">
+    <h1>Reports &amp; Financial Analytics</h1>
+    <p class="page-subtitle">Sales turnover, gross margins, stock valuations, and supplier procurement breakdowns</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('reports.export_csv', type=report_type, date_from=date_from, date_to=date_to) }}" class="btn btn-secondary">
+      <i class="fa-solid fa-file-csv"></i>
+      <span>Export Active Report to CSV</span>
+    </a>
+  </div>
+</div>
+
+<!-- Financial KPI Summary Cards (Explicitly distinguishes Gross Profit from Net Sales) -->
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+  <!-- Gross Sales -->
+  <div class="stat-card">
+    <div class="stat-info">
+      <span class="stat-label">Gross Billed Sales</span>
+      <span class="stat-value">₹{{ "%.2f"|format(kpi.gross_sales) }}</span>
+      <span class="stat-subtext">Before discount deductions</span>
+    </div>
+    <div class="stat-icon blue">
+      <i class="fa-solid fa-receipt"></i>
+    </div>
+  </div>
+
+  <!-- Total Discounts -->
+  <div class="stat-card">
+    <div class="stat-info">
+      <span class="stat-label">Total Discounts</span>
+      <span class="stat-value" style="color: var(--emerald);">-₹{{ "%.2f"|format(kpi.total_discount) }}</span>
+      <span class="stat-subtext">Customer promotional savings</span>
+    </div>
+    <div class="stat-icon emerald">
+      <i class="fa-solid fa-tags"></i>
+    </div>
+  </div>
+
+  <!-- GST / Tax Collected -->
+  <div class="stat-card">
+    <div class="stat-info">
+      <span class="stat-label">GST / Tax Collected</span>
+      <span class="stat-value">₹{{ "%.2f"|format(kpi.total_tax) }}</span>
+      <span class="stat-subtext">Statutory tax liability</span>
+    </div>
+    <div class="stat-icon teal">
+      <i class="fa-solid fa-landmark"></i>
+    </div>
+  </div>
+
+  <!-- Cost of Goods Sold -->
+  <div class="stat-card">
+    <div class="stat-info">
+      <span class="stat-label">Cost of Goods (COGS)</span>
+      <span class="stat-value" style="color: var(--slate-700);">₹{{ "%.2f"|format(kpi.cogs) }}</span>
+      <span class="stat-subtext">Batch purchase cost</span>
+    </div>
+    <div class="stat-icon amber">
+      <i class="fa-solid fa-boxes-packing"></i>
+    </div>
+  </div>
+
+  <!-- Estimated Gross Profit (Strictly labeled Gross Profit) -->
+  <div class="stat-card" style="border: 2px solid var(--primary); background: var(--primary-subtle);">
+    <div class="stat-info">
+      <span class="stat-label" style="color: var(--primary-dark); font-weight: 700;">Estimated Gross Profit</span>
+      <span class="stat-value" style="color: var(--primary-dark);">₹{{ "%.2f"|format(kpi.estimated_gross_profit) }}</span>
+      <span class="stat-subtext" style="color: var(--primary);">
+        <strong>{{ kpi.gross_margin_pct }}%</strong> Gross Margin on Net Sales
+      </span>
+    </div>
+    <div class="stat-icon blue" style="background: #ffffff;">
+      <i class="fa-solid fa-chart-line"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Date Filter & Report Type Tabs -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-body" style="padding: 1rem;">
+    <form method="GET" action="{{ url_for('reports.index') }}" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <input type="hidden" name="type" value="{{ report_type }}">
+
+      <div style="font-weight: 600; font-size: 0.85rem; color: var(--slate-700);">
+        <i class="fa-regular fa-calendar" style="color: var(--primary);"></i> Date Range:
+      </div>
+
+      <div>
+        <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+      </div>
+
+      <div style="color: var(--slate-400);">&rarr;</div>
+
+      <div>
+        <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary">Filter Period</button>
+    </form>
+  </div>
+</div>
+
+<!-- Report Navigation Tabs -->
+<div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); margin-bottom: 1.25rem;">
+  <a href="{{ url_for('reports.index', type='sales', date_from=date_from, date_to=date_to) }}"
+     style="padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid {% if report_type == 'sales' %}var(--primary){% else %}transparent{% endif %}; color: {% if report_type == 'sales' %}var(--primary){% else %}var(--slate-600){% endif %}; margin-bottom: -2px;">
+    <i class="fa-solid fa-calendar-day"></i> Daily Sales Breakdown
+  </a>
+
+  <a href="{{ url_for('reports.index', type='medicines', date_from=date_from, date_to=date_to) }}"
+     style="padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid {% if report_type == 'medicines' %}var(--primary){% else %}transparent{% endif %}; color: {% if report_type == 'medicines' %}var(--primary){% else %}var(--slate-600){% endif %}; margin-bottom: -2px;">
+    <i class="fa-solid fa-pills"></i> Sales by Medicine &amp; Salt
+  </a>
+
+  <a href="{{ url_for('reports.index', type='purchases', date_from=date_from, date_to=date_to) }}"
+     style="padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid {% if report_type == 'purchases' %}var(--primary){% else %}transparent{% endif %}; color: {% if report_type == 'purchases' %}var(--primary){% else %}var(--slate-600){% endif %}; margin-bottom: -2px;">
+    <i class="fa-solid fa-truck-field"></i> Purchases by Supplier
+  </a>
+
+  <a href="{{ url_for('reports.index', type='valuation', date_from=date_from, date_to=date_to) }}"
+     style="padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid {% if report_type == 'valuation' %}var(--primary){% else %}transparent{% endif %}; color: {% if report_type == 'valuation' %}var(--primary){% else %}var(--slate-600){% endif %}; margin-bottom: -2px;">
+    <i class="fa-solid fa-vault"></i> Inventory Stock Valuation
+  </a>
+</div>
+
+<!-- Tab Content Table -->
+<div class="card">
+  <div class="table-responsive">
+    {% if report_type == 'sales' %}
+    <!-- 1. Daily Sales Table -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Sale Date</th>
+          <th style="text-align: center;">Transactions</th>
+          <th style="text-align: right;">Gross Billed</th>
+          <th style="text-align: right;">Discounts</th>
+          <th style="text-align: right;">Tax Collected</th>
+          <th style="text-align: right;">Net Revenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if report_data %}
+          {% for r in report_data %}
+          <tr>
+            <td><strong>{{ r.sale_date }}</strong></td>
+            <td style="text-align: center;"><span class="badge badge-info">{{ r.tx_count }} sales</span></td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.day_gross) }}</td>
+            <td style="text-align: right; color: var(--emerald);">-₹{{ "%.2f"|format(r.day_discount) }}</td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.day_tax) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">
+              ₹{{ "%.2f"|format(r.day_net) }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--slate-500); padding: 2rem;">No transactions recorded in this date range.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% elif report_type == 'medicines' %}
+    <!-- 2. Sales by Medicine Table -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Medicine Name</th>
+          <th>Category</th>
+          <th style="text-align: center;">Units Sold</th>
+          <th style="text-align: right;">Avg Price</th>
+          <th style="text-align: right;">Total Revenue</th>
+          <th style="text-align: right;">Cost of Goods</th>
+          <th style="text-align: right;">Gross Profit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if report_data %}
+          {% for r in report_data %}
+          <tr>
+            <td><span class="badge badge-neutral">{{ r.code }}</span></td>
+            <td><strong>{{ r.name }}</strong></td>
+            <td><span class="badge badge-neutral">{{ r.category }}</span></td>
+            <td style="text-align: center;"><strong>{{ r.units_sold }}</strong></td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.avg_price) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">₹{{ "%.2f"|format(r.total_revenue) }}</td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.total_cost) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--emerald);">
+              ₹{{ "%.2f"|format(r.item_gross_profit) }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--slate-500); padding: 2rem;">No medicines sold in this period.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% elif report_type == 'purchases' %}
+    <!-- 3. Purchases by Supplier Table -->
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Supplier Agency</th>
+          <th>GSTIN</th>
+          <th style="text-align: center;">Purchase Orders</th>
+          <th style="text-align: right;">Subtotal</th>
+          <th style="text-align: right;">Discounts</th>
+          <th style="text-align: right;">Tax Amount</th>
+          <th style="text-align: right;">Total Inward Spend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if report_data %}
+          {% for r in report_data %}
+          <tr>
+            <td><strong>{{ r.supplier_name }}</strong></td>
+            <td><span style="font-family: monospace;">{{ r.gstin or 'N/A' }}</span></td>
+            <td style="text-align: center;"><span class="badge badge-info">{{ r.order_count }} POs</span></td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.supplier_subtotal) }}</td>
+            <td style="text-align: right; color: var(--emerald);">-₹{{ "%.2f"|format(r.supplier_discount) }}</td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.supplier_tax) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">
+              ₹{{ "%.2f"|format(r.supplier_grand_total) }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--slate-500); padding: 2rem;">No purchase orders found in this period.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <!-- 4. Inventory Valuation Table -->
+    <div style="padding: 1.25rem; background: var(--slate-50); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-around; text-align: center;">
+      <div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); text-transform: uppercase;">Total Available Units</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--slate-900);">{{ stock_totals.total_items }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); text-transform: uppercase;">Total Inventory Cost Valuation</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">₹{{ "%.2f"|format(stock_totals.total_cost_valuation) }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); text-transform: uppercase;">Estimated Retail Potential Value</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--emerald);">₹{{ "%.2f"|format(stock_totals.total_retail_valuation) }}</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Medicine Name</th>
+          <th>Category</th>
+          <th>Rack Location</th>
+          <th style="text-align: center;">Stock Units</th>
+          <th style="text-align: right;">Avg Cost</th>
+          <th style="text-align: right;">Avg Retail</th>
+          <th style="text-align: right;">Cost Valuation</th>
+          <th style="text-align: right;">Retail Valuation</th>
+          <th style="text-align: right;">Potential Margin</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if report_data %}
+          {% for r in report_data %}
+          <tr>
+            <td><span class="badge badge-neutral">{{ r.code }}</span></td>
+            <td><strong>{{ r.name }}</strong></td>
+            <td><span class="badge badge-neutral">{{ r.category }}</span></td>
+            <td><span class="badge badge-neutral">{{ r.rack_location or 'N/A' }}</span></td>
+            <td style="text-align: center;"><strong>{{ r.total_units }}</strong></td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.avg_cost) }}</td>
+            <td style="text-align: right;">₹{{ "%.2f"|format(r.avg_price) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--slate-900);">₹{{ "%.2f"|format(r.total_cost_value) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--primary);">₹{{ "%.2f"|format(r.total_retail_value) }}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--emerald);">+₹{{ "%.2f"|format(r.potential_profit) }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="10" style="text-align: center; color: var(--slate-500); padding: 2rem;">No inventory valuation records found.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
